@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ally's Hero Calculator</title>
+<style>
+  :root{
+    --bg: #12151c;
+    --surface: #1b202b;
+    --surface2: #222838;
+    --row-alt: #1f2530;
+    --border: #2c3242;
+    --text: #e9e4d6;
+    --text-dim: #9098a8;
+    --text-faint: #626a7a;
+    --gold: #c9a227;
+    --gold-soft: #8a7222;
+    --bronze: #b56a3c;
+    --good: #5c9c6d;
+    --bad: #b0503f;
+    --r-urplus: #d8433c;
+    --r-ur: #a855c9;
+    --r-ssr: #d9a520;
+    --r-sr: #4287c9;
+    --r-r: #7b8794;
+    --serif: 'Source Serif 4', Georgia, 'Iowan Old Style', serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, Helvetica, Arial, sans-serif;
+    --radius: 6px;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.45;
+    min-height:100vh;
+  }
+  ::selection{ background: var(--gold-soft); color:#fff; }
+
+  .wrap{ max-width: 1280px; margin: 0 auto; padding: 28px 22px 80px; }
+
+  /* ---- header ---- */
+  header.top{
+    display:flex; align-items:flex-end; justify-content:space-between;
+    gap: 20px; flex-wrap:wrap;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 18px; margin-bottom: 18px;
+  }
+  .brand h1{
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 30px;
+    margin: 0 0 4px;
+    color: var(--text);
+    letter-spacing: 0.2px;
+  }
+  .brand h1 em{ font-style: normal; color: var(--gold); }
+  .brand p{ margin:0; color: var(--text-dim); font-size: 13px; max-width: 520px; }
+
+  .tabbar{ display:flex; gap:4px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius); padding:3px; }
+  .tabbar button{
+    appearance:none; border:none; background:transparent; color: var(--text-dim);
+    font-family: var(--sans); font-size: 13px; font-weight:600; padding: 8px 16px;
+    border-radius: 4px; cursor:pointer; transition: background .15s, color .15s;
+  }
+  .tabbar button:hover{ color: var(--text); }
+  .tabbar button.on{ background: var(--gold); color: #17130a; }
+
+  /* ---- toolbar ---- */
+  .toolbar{
+    display:flex; align-items:center; gap: 10px; flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .toolbar .grow{ flex:1 1 220px; }
+  input[type=text].search{
+    width:100%; background: var(--surface); border:1px solid var(--border); color: var(--text);
+    border-radius: var(--radius); padding: 8px 12px; font-size:13px; font-family: var(--sans);
+  }
+  input[type=text].search:focus, input:focus, select:focus{ outline: 1px solid var(--gold); outline-offset: 0; }
+  select.classfilter{
+    background: var(--surface); border:1px solid var(--border); color:var(--text);
+    border-radius: var(--radius); padding: 8px 10px; font-size:13px; font-family: var(--sans);
+  }
+  .btn{
+    appearance:none; border:1px solid var(--border); background: var(--surface); color: var(--text);
+    font-family: var(--sans); font-size: 13px; font-weight:600; padding: 8px 14px;
+    border-radius: var(--radius); cursor:pointer; white-space:nowrap;
+  }
+  .btn:hover{ border-color: var(--gold-soft); color: var(--gold); }
+  .btn.primary{ background: var(--gold); color:#17130a; border-color: var(--gold); }
+  .btn.primary:hover{ background:#dcb236; color:#17130a; }
+  .btn.ghost{ background:transparent; }
+  .btn.danger:hover{ border-color: var(--bad); color: var(--bad); }
+  .btn.small{ padding: 5px 10px; font-size: 12px; }
+
+  .count-note{ color: var(--text-faint); font-size: 12px; padding: 0 2px; }
+
+  /* ---- table ---- */
+  .tablewrap{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow-x: auto;
+  }
+  table{ width:100%; border-collapse: collapse; min-width: 920px; }
+  thead th{
+    position: sticky; top:0; background: var(--surface2);
+    text-align:left; font-size: 11.5px; font-weight:700; color: var(--text-dim);
+    letter-spacing: 0.3px; padding: 10px 10px; border-bottom: 1px solid var(--border);
+    cursor: pointer; user-select:none; white-space:nowrap;
+  }
+  thead th:hover{ color: var(--gold); }
+  thead th.num{ text-align:right; }
+  thead th .arrow{ margin-left:4px; color: var(--gold); }
+  tbody td{ padding: 7px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tbody tr:nth-child(even){ background: var(--row-alt); }
+  tbody tr:hover{ background: #262d3d; }
+  tbody tr.rank1 td.rankcell{ color: var(--gold); font-weight:800; }
+  tbody tr.rank2 td.rankcell{ color: #c8c2ae; font-weight:800; }
+  tbody tr.rank3 td.rankcell{ color: var(--bronze); font-weight:800; }
+  td.rankcell{ color: var(--text-faint); font-variant-numeric: tabular-nums; width: 30px; }
+  td.num{ text-align:right; font-variant-numeric: tabular-nums; white-space:nowrap; }
+  td.valcell{ font-weight:700; color: var(--text); }
+  td.namecell{ min-width: 150px; }
+  td.namecell input{
+    width:100%; background:transparent; border:1px solid transparent; color: var(--text);
+    font-family: var(--sans); font-size: 13.5px; font-weight:600; padding: 3px 4px; border-radius:4px;
+  }
+  td.namecell input:hover{ border-color: var(--border); }
+  td.namecell input:focus{ background: var(--surface2); border-color: var(--gold-soft); }
+  .note-flag{
+    display:inline-block; margin-left:5px; width:14px; height:14px; line-height:14px; text-align:center;
+    font-size:10px; border-radius:50%; background: var(--surface2); color: var(--text-dim);
+    cursor: help; vertical-align: middle;
+  }
+  td select{
+    background: var(--surface2); border:1px solid var(--border); color: var(--text);
+    border-radius:4px; padding: 4px 6px; font-size:12.5px; font-family: var(--sans); max-width:120px;
+  }
+  td input[type=number]{
+    width: 84px; background: var(--surface2); border:1px solid var(--border); color: var(--text);
+    border-radius:4px; padding: 4px 6px; font-size:13px; text-align:right; font-family: var(--sans);
+  }
+  .pill{
+    display:inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight:800;
+    letter-spacing:0.3px; color:#fff;
+  }
+  .pill.urplus{ background: var(--r-urplus); }
+  .pill.ur{ background: var(--r-ur); }
+  .pill.ssr{ background: var(--r-ssr); color:#241d02; }
+  .pill.sr{ background: var(--r-sr); }
+  .pill.r{ background: var(--r-r); color:#161a1f; }
+  td .rowdel{
+    background:transparent; border:none; color: var(--text-faint); cursor:pointer; font-size:15px;
+    padding: 2px 6px; border-radius:4px;
+  }
+  td .rowdel:hover{ color: var(--bad); background: var(--surface2); }
+
+  .empty-row td{ text-align:center; padding: 30px; color: var(--text-faint); font-style: italic; }
+
+  /* ---- formulas drawer ---- */
+  .drawer{
+    margin-top: 18px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius);
+    padding: 16px 18px;
+  }
+  .drawer h2{ font-family: var(--serif); font-size:17px; margin: 0 0 4px; color: var(--text); }
+  .drawer > p.sub{ margin: 0 0 14px; color: var(--text-dim); font-size:12.5px; max-width: 640px; }
+  .lookup-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  @media (max-width: 760px){ .lookup-grid{ grid-template-columns: 1fr; } }
+  .lookup-col h3{ font-size: 12.5px; text-transform: none; color: var(--gold); margin: 0 0 8px; letter-spacing:.2px; }
+  .lrow{ display:grid; grid-template-columns: 1fr 90px 90px 26px; gap:6px; align-items:center; margin-bottom:6px; }
+  .lrow.star{ grid-template-columns: 1fr 90px 26px; }
+  .lrow input[type=text]{ background: var(--surface2); border:1px solid var(--border); color:var(--text); border-radius:4px; padding:5px 7px; font-size:12.5px; }
+  .lrow input[type=number]{ width:100%; background: var(--surface2); border:1px solid var(--border); color:var(--text); border-radius:4px; padding:5px 7px; font-size:12.5px; text-align:right; }
+  .lrow .rowdel{ background:transparent; border:none; color: var(--text-faint); cursor:pointer; font-size:14px; }
+  .lrow .rowdel:hover{ color: var(--bad); }
+  .lrow.head{ color: var(--text-faint); font-size: 10.5px; }
+  .drawer-actions{ margin-top: 14px; display:flex; gap:8px; flex-wrap:wrap; }
+
+  footer.formula-note{
+    margin-top: 16px; color: var(--text-faint); font-size: 12px; max-width: 760px;
+  }
+  footer.formula-note code{ color: var(--text-dim); background: var(--surface2); padding:1px 5px; border-radius:3px; font-size:11.5px; }
+
+  .hidden{ display:none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <h1>Ally's <em>Hero Calculator</em></h1>
+      <p>Bonus-attack rating calculator. Enter ATK and star rank to rate your own roster, or browse base values to plan who to invest in.</p>
+    </div>
+    <div class="tabbar" id="tabbar">
+      <button data-tab="personal" class="on">Personal Roster</button>
+      <button data-tab="base">Base Values</button>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="grow">
+      <input type="text" class="search" id="searchBox" placeholder="Filter by hero name…">
+    </div>
+    <select class="classfilter" id="classFilter">
+      <option value="">All classes</option>
+    </select>
+    <select class="classfilter" id="rarityFilter">
+      <option value="">All rarities</option>
+    </select>
+    <select class="classfilter" id="addHeroSelect">
+      <option value="" selected disabled>+ Add hero…</option>
+    </select>
+    <button class="btn" id="toggleFormulas">Rarity &amp; star formulas</button>
+    <button class="btn ghost danger" id="resetTabBtn">Reset all data</button>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr id="headRow"></tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+  <div class="count-note" id="countNote"></div>
+
+  <div class="drawer hidden" id="drawer">
+    <h2>Rarity &amp; star formulas</h2>
+    <p class="sub">These tables drive every row's Trigger, Damage, Value and Amount. Edit them if the game rebalances a rarity or adds a new star tier — changes apply to both Personal and Base tabs immediately.</p>
+    <div class="lookup-grid">
+      <div class="lookup-col">
+        <h3>Rarity → trigger chance &amp; base damage</h3>
+        <div class="lrow head"><span>Rarity</span><span>Trigger %</span><span>Base dmg</span><span></span></div>
+        <div id="rarityRows"></div>
+        <button class="btn small" id="addRarity">+ Rarity</button>
+      </div>
+      <div class="lookup-col">
+        <h3>Star color → order</h3>
+        <div class="lrow star head"><span>Star</span><span>Order</span><span></span></div>
+        <div id="starRows"></div>
+        <button class="btn small" id="addStar">+ Star</button>
+      </div>
+    </div>
+    <div class="drawer-actions">
+      <button class="btn" id="resetFormulas">Reset formulas to default</button>
+    </div>
+  </div>
+
+  <footer class="formula-note">
+    <p><code>Damage = BaseDamage(rarity) + (StarOrder − 1) × 10%</code> &nbsp;·&nbsp;
+    <code>Value = ATK × Trigger(rarity) × Damage</code> &nbsp;·&nbsp;
+    <code>Amount = Damage × ATK</code> — Value weighs a hero's bonus attack by how often it triggers; Amount is the raw strength of the hit if it lands. Edits and added heroes are saved automatically in this browser.</p>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------------- default lookup tables (shared by both tabs) ----------------
+  var DEFAULT_STAR_ORDER = [
+    ["Green",1],["Blue",2],["Purple",3],["Yellow",4],["Red",5],
+    ["Shiny Yellow",6],["Shiny Blue",7],["Shiny Purple",8],["Max",9]
+  ];
+  var DEFAULT_RARITY = [
+    ["UR+", 0.4, 2.0],
+    ["UR", 0.4, 2.0],
+    ["SSR", 0.3, 1.6],
+    ["SR", 0.25, 1.4],
+    ["R", 0.2, 1.2]
+  ];
+
+  var LS_LOOKUP = 'valorindex_lookup_v1';
+  var LS_DATA_PREFIX = 'valorindex_data_';   // + tab name
+
+  function loadLookup(){
+    try{
+      var raw = localStorage.getItem(LS_LOOKUP);
+      if (raw){
+        var d = JSON.parse(raw);
+        if (d && Array.isArray(d.star) && Array.isArray(d.rarity)) return d;
+      }
+    }catch(e){}
+    return {star: DEFAULT_STAR_ORDER.map(function(x){return x.slice();}),
+            rarity: DEFAULT_RARITY.map(function(x){return x.slice();})};
+  }
+  var LOOKUP = loadLookup();
+  function saveLookup(){ try{ localStorage.setItem(LS_LOOKUP, JSON.stringify(LOOKUP)); }catch(e){} }
+
+  function starOrderOf(star){
+    for (var i=0;i<LOOKUP.star.length;i++) if (LOOKUP.star[i][0]===star) return LOOKUP.star[i][1];
+    return 1;
+  }
+  function rarityOf(cat){
+    for (var i=0;i<LOOKUP.rarity.length;i++) if (LOOKUP.rarity[i][0]===cat) return {trigger:LOOKUP.rarity[i][1], base:LOOKUP.rarity[i][2]};
+    return {trigger:0, base:0};
+  }
+  function calc(h){
+    var r = rarityOf(h.cat);
+    var order = starOrderOf(h.star);
+    var damage = r.base + (order - 1) * 0.10;
+    var trigger = r.trigger;
+    var atk = (typeof h.atk === 'number' && !isNaN(h.atk)) ? h.atk : 0;
+    var value = atk * trigger * damage;
+    var amount = damage * atk;
+    return {trigger:trigger, damage:damage, value:value, amount:amount};
+  }
+
+  // ---------------- embedded starting rosters ----------------
+  var SEED_PERSONAL = [{"name": "Joan of Arc", "cat": "UR+", "star": "Yellow", "atk": 13.4, "cls": "Cavalry", "note": "Attacks an additional 12% per 15% missing HP"}, {"name": "Ragnar", "cat": "UR+", "star": "Green", "atk": 8.69, "cls": "Shieldman", "note": "Enemy skill damage reduction bonus reduced by 20% for 2 turns For 3 turns, when the target gains buff, buff transfers to allies"}, {"name": "Achilles", "cat": "UR", "star": "Yellow", "atk": 7.12, "cls": "Pikeman", "note": ""}, {"name": "Arthur", "cat": "UR+", "star": "Green", "atk": 6.29, "cls": "Archer", "note": "Increases personal skill damage reduction by 20% for 3 turns Damage over time equal to 75% of allies attack for 3 turns"}, {"name": "Shakespeare", "cat": "UR", "star": "Blue", "atk": 5.99, "cls": "Pikeman", "note": "If in first 5 turns, 110% extra damage, or extra damage equivalent to 55% ATK otherwise"}, {"name": "Tutankhamun", "cat": "UR", "star": "Blue", "atk": 5.81, "cls": "Archer", "note": "If critical chance hit, removes 1 buff from enemies"}, {"name": "Charlemagne", "cat": "UR", "star": "Purple", "atk": 5.16, "cls": "Archer", "note": "Damage over time dealt equal to total 65% total ATK for 3 turns"}, {"name": "Lancelot", "cat": "UR+", "star": "Green", "atk": 5.64, "cls": "Cavalry", "note": ""}, {"name": "Augustus", "cat": "UR", "star": "Purple", "atk": 5.1, "cls": "Shieldman", "note": "50% chance to recover 16% max ally HP, 50% chance to deal 153% of ATK"}, {"name": "Blackbeard", "cat": "UR", "star": "Purple", "atk": 5.04, "cls": "Archer", "note": ""}, {"name": "Da Vinci", "cat": "UR", "star": "Blue", "atk": 4.98, "cls": "Shieldman", "note": "Reduces enemy skill damage by bonus of 22% for 2 turns, if target has 2 or fewer debuffs also reduces enemies' atk bonus by 22% for 2 turns"}, {"name": "Lagertha", "cat": "UR+", "star": "Green", "atk": 5.46, "cls": "Shieldman", "note": ""}, {"name": "Richard", "cat": "UR", "star": "Blue", "atk": 4.85, "cls": "Cavalry", "note": "59% chance to not recieve any debuffs for next 2 turns"}, {"name": "Spartacus", "cat": "UR+", "star": "Blue", "atk": 4.8, "cls": "Shieldman", "note": "Gives shield 21% of total HP, increases skill damage by 21% for 3 turns"}, {"name": "Alexander", "cat": "UR", "star": "Blue", "atk": 4.76, "cls": "Cavalry", "note": ""}, {"name": "Victoria", "cat": "UR", "star": "Blue", "atk": 4.66, "cls": "Cavalry", "note": ""}, {"name": "Billy the Kid", "cat": "UR+", "star": "Blue", "atk": 4.65, "cls": "Cavalry", "note": ""}, {"name": "Newton", "cat": "UR", "star": "Blue", "atk": 4.59, "cls": "Shieldman", "note": ""}, {"name": "Napoleon", "cat": "UR", "star": "Green", "atk": 4.81, "cls": "Pikeman", "note": ""}, {"name": "Heracles", "cat": "UR+", "star": "Green", "atk": 4.72, "cls": "Pikeman", "note": ""}, {"name": "Hermes", "cat": "UR+", "star": "Green", "atk": 4.57, "cls": "Shieldman", "note": ""}, {"name": "Caesar", "cat": "UR+", "star": "Green", "atk": 4.52, "cls": "Archer", "note": ""}, {"name": "Gawain", "cat": "UR", "star": "Green", "atk": 4.5, "cls": "Pikeman", "note": ""}, {"name": "Pompey", "cat": "UR+", "star": "Green", "atk": 4.48, "cls": "Cavalry", "note": ""}, {"name": "Odysseus", "cat": "UR+", "star": "Green", "atk": 4.43, "cls": "Shieldman", "note": ""}, {"name": "Guinevere", "cat": "UR", "star": "Green", "atk": 3.94, "cls": "Cavalry", "note": ""}, {"name": "Dante", "cat": "SSR", "star": "Red", "atk": 5.02, "cls": "Archer", "note": ""}, {"name": "Hammurabi", "cat": "SSR", "star": "Red", "atk": 4.97, "cls": "Shieldman", "note": ""}, {"name": "Hector", "cat": "SSR", "star": "Yellow", "atk": 5.17, "cls": "Pikeman", "note": ""}, {"name": "Socrates", "cat": "SSR", "star": "Yellow", "atk": 4.89, "cls": "Cavalry", "note": ""}, {"name": "Gilgamesh", "cat": "SSR", "star": "Purple", "atk": 4.81, "cls": "Pikeman", "note": ""}, {"name": "Confucius", "cat": "SSR", "star": "Purple", "atk": 4.69, "cls": "Pikeman", "note": ""}, {"name": "Galileo", "cat": "SSR", "star": "Purple", "atk": 4.64, "cls": "Shieldman", "note": ""}, {"name": "Livia", "cat": "SSR", "star": "Purple", "atk": 4.62, "cls": "Shieldman", "note": ""}, {"name": "Michelangelo", "cat": "SSR", "star": "Purple", "atk": 4.59, "cls": "Archer", "note": ""}, {"name": "Alfred", "cat": "SSR", "star": "Purple", "atk": 4.57, "cls": "Cavalry", "note": ""}, {"name": "Eleanor", "cat": "SSR", "star": "Purple", "atk": 4.53, "cls": "Archer", "note": ""}, {"name": "Tesla", "cat": "SSR", "star": "Blue", "atk": 4.45, "cls": "Pikeman", "note": ""}, {"name": "Homer", "cat": "SR", "star": "Shiny Blue", "atk": 4.52, "cls": "Archer", "note": ""}, {"name": "Noah", "cat": "SR", "star": "Shiny Blue", "atk": 4.52, "cls": "Shieldman", "note": ""}, {"name": "Prometheus", "cat": "SR", "star": "Shiny Yellow", "atk": 4.74, "cls": "Pikeman", "note": ""}, {"name": "Louis XIV", "cat": "SSR", "star": "Blue", "atk": 4.38, "cls": "Pikeman", "note": ""}, {"name": "Adam", "cat": "SR", "star": "Shiny Yellow", "atk": 4.5, "cls": "Archer", "note": ""}, {"name": "Darwin", "cat": "SSR", "star": "Green", "atk": 4.02, "cls": "Archer", "note": ""}, {"name": "Catherine de Medici", "cat": "SR", "star": "Red", "atk": 4.21, "cls": "Pikeman", "note": ""}, {"name": "Hatshepsut", "cat": "SR", "star": "Red", "atk": 4.17, "cls": "Cavalry", "note": ""}, {"name": "Franklin", "cat": "SSR", "star": "Green", "atk": 3.86, "cls": "Shieldman", "note": ""}, {"name": "Mary", "cat": "SR", "star": "Yellow", "atk": 4.35, "cls": "Pikeman", "note": ""}, {"name": "Isabella", "cat": "SR", "star": "Red", "atk": 4.07, "cls": "Archer", "note": ""}, {"name": "Hannibal", "cat": "SR", "star": "Red", "atk": 4.04, "cls": "Cavalry", "note": ""}, {"name": "Hypatia", "cat": "SR", "star": "Red", "atk": 4.01, "cls": "Shieldman", "note": ""}, {"name": "Beethoven", "cat": "SSR", "star": "Green", "atk": 3.69, "cls": "Cavalry", "note": ""}, {"name": "Columbus", "cat": "SSR", "star": "Green", "atk": 3.68, "cls": "Shieldman", "note": ""}, {"name": "Dido", "cat": "R", "star": "Max", "atk": 4.35, "cls": "Pikeman", "note": ""}, {"name": "Cu Chulainn", "cat": "R", "star": "Max", "atk": 4.33, "cls": "Pikeman", "note": ""}, {"name": "Wallace", "cat": "SR", "star": "Yellow", "atk": 3.94, "cls": "Shieldman", "note": ""}, {"name": "Saladin", "cat": "SR", "star": "Yellow", "atk": 3.93, "cls": "Cavalry", "note": ""}, {"name": "Victor Hugo", "cat": "SR", "star": "Yellow", "atk": 3.87, "cls": "Archer", "note": ""}, {"name": "Marco Polo", "cat": "R", "star": "Max", "atk": 4.06, "cls": "Cavalry", "note": ""}, {"name": "James Watt", "cat": "SR", "star": "Purple", "atk": 3.99, "cls": "Pikeman", "note": ""}, {"name": "Archimedes", "cat": "R", "star": "Shiny Purple", "atk": 4.01, "cls": "Shieldman", "note": ""}, {"name": "Edison", "cat": "SR", "star": "Purple", "atk": 3.74, "cls": "Archer", "note": ""}, {"name": "Anderson", "cat": "SR", "star": "Purple", "atk": 3.73, "cls": "Shieldman", "note": ""}, {"name": "Drake", "cat": "SR", "star": "Purple", "atk": 3.7, "cls": "Archer", "note": ""}, {"name": "Elizabeth", "cat": "SR", "star": "Purple", "atk": 3.68, "cls": "Cavalry", "note": ""}, {"name": "Chaucer", "cat": "R", "star": "Shiny Blue", "atk": 3.87, "cls": "Shieldman", "note": ""}, {"name": "Cervantes", "cat": "R", "star": "Shiny Yellow", "atk": 3.84, "cls": "Archer", "note": ""}, {"name": "Robin Hood", "cat": "R", "star": "Shiny Yellow", "atk": 3.83, "cls": "Archer", "note": ""}, {"name": "Himiko", "cat": "R", "star": "Shiny Yellow", "atk": 3.78, "cls": "Cavalry", "note": ""}, {"name": "Florence Nightingale", "cat": "R", "star": "Red", "atk": 3.81, "cls": "Pikeman", "note": ""}, {"name": "Anne Bonny", "cat": "R", "star": "Red", "atk": 3.67, "cls": "Archer", "note": ""}, {"name": "Hamilton", "cat": "R", "star": "Red", "atk": 3.63, "cls": "Cavalry", "note": ""}, {"name": "Mary Shelley", "cat": "R", "star": "Red", "atk": 3.6, "cls": "Shieldman", "note": ""}];
+  var SEED_BASE = [{"name": "Achilles", "cat": "UR", "star": "Green", "atk": 138400.0, "cls": "", "note": ""}, {"name": "Adam", "cat": "SR", "star": "Green", "atk": 45980.0, "cls": "", "note": ""}, {"name": "Alexander", "cat": "UR", "star": "Green", "atk": 127300.0, "cls": "", "note": ""}, {"name": "Alexander Hamilton", "cat": "R", "star": "Green", "atk": 9922.0, "cls": "", "note": ""}, {"name": "Alfred", "cat": "SSR", "star": "Green", "atk": 97830.0, "cls": "", "note": ""}, {"name": "Anderson", "cat": "SR", "star": "Green", "atk": 26240.0, "cls": "", "note": ""}, {"name": "Anne Bonny", "cat": "R", "star": "Green", "atk": 9749.0, "cls": "", "note": ""}, {"name": "Archimedes", "cat": "R", "star": "Green", "atk": 12420.0, "cls": "", "note": ""}, {"name": "Arthur", "cat": "UR+", "star": "Green", "atk": 145400.0, "cls": "", "note": "Increases personal skill damage reduction by 20% for 3 turns Damage over time equal to 75% of allies attack for 3 turns"}, {"name": "Augustus", "cat": "UR", "star": "Green", "atk": 142800.0, "cls": "", "note": "50% chance to recover 16% max ally HP, 50% chance to deal 153% of ATK"}, {"name": "Beethoven", "cat": "SSR", "star": "Green", "atk": 68810.0, "cls": "", "note": ""}, {"name": "Billy the Kid", "cat": "UR+", "star": "Green", "atk": 82170.0, "cls": "", "note": ""}, {"name": "Blackbeard", "cat": "UR", "star": "Green", "atk": 144600.0, "cls": "", "note": ""}, {"name": "Caesar", "cat": "UR+", "star": "Green", "atk": 130700.0, "cls": "", "note": ""}, {"name": "Catherine de Medici", "cat": "SR", "star": "Green", "atk": 24360.0, "cls": "", "note": ""}, {"name": "Cervantes", "cat": "R", "star": "Green", "atk": 12360.0, "cls": "", "note": ""}, {"name": "Charlemagne", "cat": "UR", "star": "Green", "atk": 142100.0, "cls": "", "note": "Damage over time dealt equal to total 65% total ATK for 3 turns"}, {"name": "Charles Darwin", "cat": "SSR", "star": "Green", "atk": 78870.0, "cls": "", "note": ""}, {"name": "Chaucer", "cat": "R", "star": "Green", "atk": 14290.0, "cls": "", "note": ""}, {"name": "Columbus", "cat": "SSR", "star": "Green", "atk": 49360.0, "cls": "", "note": ""}, {"name": "Confucius", "cat": "SSR", "star": "Green", "atk": 83660.0, "cls": "", "note": ""}, {"name": "Cu Chulainn", "cat": "R", "star": "Green", "atk": 21540.0, "cls": "", "note": ""}, {"name": "Da Vinci", "cat": "UR", "star": "Green", "atk": 141600.0, "cls": "", "note": "Reduces enemy skill damage by bonus of 22% for 2 turns, if target has 2 or fewer debuffs also reduces enemies' atk bonus by 22% for 2 turns"}, {"name": "Dante", "cat": "SSR", "star": "Green", "atk": 84100.0, "cls": "", "note": ""}, {"name": "Dido", "cat": "R", "star": "Green", "atk": 23030.0, "cls": "", "note": ""}, {"name": "Drake", "cat": "SR", "star": "Green", "atk": 28600.0, "cls": "", "note": ""}, {"name": "Eleanor", "cat": "SSR", "star": "Green", "atk": 83860.0, "cls": "", "note": ""}, {"name": "Elizabeth", "cat": "SR", "star": "Green", "atk": 27190.0, "cls": "", "note": ""}, {"name": "Florence Nightingale", "cat": "R", "star": "Green", "atk": 10360.0, "cls": "", "note": ""}, {"name": "Franklin", "cat": "SSR", "star": "Green", "atk": 68150.0, "cls": "", "note": ""}, {"name": "Galileo", "cat": "SSR", "star": "Green", "atk": 96490.0, "cls": "", "note": ""}, {"name": "Gawain", "cat": "UR", "star": "Green", "atk": 99590.0, "cls": "", "note": ""}, {"name": "Gilgamesh", "cat": "SSR", "star": "Green", "atk": 91190.0, "cls": "", "note": ""}, {"name": "Guinevere", "cat": "UR", "star": "Green", "atk": 0, "cls": "", "note": ""}, {"name": "Hammurabi", "cat": "SSR", "star": "Green", "atk": 84760.0, "cls": "", "note": ""}, {"name": "Hannibal", "cat": "SR", "star": "Green", "atk": 26300.0, "cls": "", "note": ""}, {"name": "Hatshepsut", "cat": "SR", "star": "Green", "atk": 39280.0, "cls": "", "note": ""}, {"name": "Hector", "cat": "SSR", "star": "Green", "atk": 89230.0, "cls": "", "note": ""}, {"name": "Heracles", "cat": "UR+", "star": "Green", "atk": 0, "cls": "", "note": ""}, {"name": "Hermes", "cat": "UR+", "star": "Green", "atk": 142100.0, "cls": "", "note": ""}, {"name": "Himiko", "cat": "R", "star": "Green", "atk": 11090.0, "cls": "", "note": ""}, {"name": "Homer", "cat": "SR", "star": "Green", "atk": 45250.0, "cls": "", "note": ""}, {"name": "Hypatia", "cat": "SR", "star": "Green", "atk": 26900.0, "cls": "", "note": ""}, {"name": "Isabella", "cat": "SR", "star": "Green", "atk": 25500.0, "cls": "", "note": ""}, {"name": "James Watt", "cat": "SR", "star": "Green", "atk": 27160.0, "cls": "", "note": ""}, {"name": "Joan of Arc", "cat": "UR+", "star": "Green", "atk": 161900.0, "cls": "", "note": "Attacks an additional 12% per 15% missing HP"}, {"name": "Lancelot", "cat": "UR+", "star": "Green", "atk": 307100.0, "cls": "", "note": ""}, {"name": "Livia", "cat": "SSR", "star": "Green", "atk": 88360.0, "cls": "", "note": ""}, {"name": "Louis XIV", "cat": "SSR", "star": "Green", "atk": 90390.0, "cls": "", "note": ""}, {"name": "Marco Polo", "cat": "R", "star": "Green", "atk": 13730.0, "cls": "", "note": ""}, {"name": "Mary", "cat": "SR", "star": "Green", "atk": 41960.0, "cls": "", "note": ""}, {"name": "Mary Shelley", "cat": "R", "star": "Green", "atk": 12120.0, "cls": "", "note": ""}, {"name": "Michelangelo", "cat": "SSR", "star": "Green", "atk": 85980.0, "cls": "", "note": ""}, {"name": "Napoleon", "cat": "UR", "star": "Green", "atk": 130900.0, "cls": "", "note": ""}, {"name": "Newton", "cat": "UR", "star": "Green", "atk": 123800.0, "cls": "", "note": ""}, {"name": "Noah", "cat": "SR", "star": "Green", "atk": 46160.0, "cls": "", "note": ""}, {"name": "Odysseus", "cat": "UR+", "star": "Green", "atk": 144500.0, "cls": "", "note": ""}, {"name": "Pompey", "cat": "UR+", "star": "Green", "atk": 111700.0, "cls": "", "note": ""}, {"name": "Prometheus", "cat": "SR", "star": "Green", "atk": 48440.0, "cls": "", "note": ""}, {"name": "Ragnar", "cat": "UR+", "star": "Green", "atk": 150100.0, "cls": "", "note": "Enemy skill damage reduction bonus reduced by 20% for 2 turns For 3 turns, when the target gains buff, buff transfers to allies"}, {"name": "Richard", "cat": "UR", "star": "Green", "atk": 129800.0, "cls": "", "note": "59% chance to not recieve any debuffs for next 2 turns"}, {"name": "Robin Hood", "cat": "R", "star": "Green", "atk": 12300.0, "cls": "", "note": ""}, {"name": "Saladin", "cat": "SR", "star": "Green", "atk": 25530.0, "cls": "", "note": ""}, {"name": "Shakespeare", "cat": "UR", "star": "Green", "atk": 146800.0, "cls": "", "note": "If in first 5 turns, 110% extra damage, or extra damage equivalent to 55% ATK otherwise"}, {"name": "Socrates", "cat": "SSR", "star": "Green", "atk": 98740.0, "cls": "", "note": ""}, {"name": "Spartacus", "cat": "UR+", "star": "Green", "atk": 137200.0, "cls": "", "note": "Gives shield 21% of total HP, increases skill damage by 21% for 3 turns"}, {"name": "Tesla", "cat": "SSR", "star": "Green", "atk": 89420.0, "cls": "", "note": ""}, {"name": "Thomas Edison", "cat": "SR", "star": "Green", "atk": 26850.0, "cls": "", "note": ""}, {"name": "Tutankhamun", "cat": "UR", "star": "Green", "atk": 157700.0, "cls": "", "note": "If critical chance hit, removes 1 buff from enemies"}, {"name": "Victor Hugo", "cat": "SR", "star": "Green", "atk": 27460.0, "cls": "", "note": ""}, {"name": "Victoria", "cat": "UR", "star": "Green", "atk": 142500.0, "cls": "", "note": ""}, {"name": "Wallace", "cat": "SR", "star": "Green", "atk": 27100.0, "cls": "", "note": ""}];
+
+  function withIds(list){
+    return list.map(function(h, i){ return Object.assign({id: 'h'+i+'_'+Math.random().toString(36).slice(2,7)}, h); });
+  }
+
+  function loadData(tab, seed){
+    try{
+      var raw = localStorage.getItem(LS_DATA_PREFIX + tab);
+      if (raw){
+        var d = JSON.parse(raw);
+        if (Array.isArray(d) && d.length) return d;
+      }
+    }catch(e){}
+    return withIds(seed);
+  }
+  function saveData(tab, list){
+    try{ localStorage.setItem(LS_DATA_PREFIX + tab, JSON.stringify(list)); }catch(e){}
+  }
+
+  var STATE = {
+    tab: 'personal',
+    data: { personal: loadData('personal', SEED_PERSONAL), base: loadData('base', SEED_BASE) },
+    sort: { personal: {key:'value', dir:-1}, base: {key:'value', dir:-1} },
+    filter: { personal: {q:'', cls:'', cat:''}, base: {q:'', cls:'', cat:''} }
+  };
+
+  var CLASS_OPTIONS = ['Cavalry','Archer','Pikeman','Shieldman'];
+  var CAT_OPTIONS = function(){ return LOOKUP.rarity.map(function(r){return r[0];}); };
+  var STAR_OPTIONS = function(){ return LOOKUP.star.map(function(s){return s[0];}); };
+
+  var COLS = [
+    {key:'rank', label:'#', num:true, sortable:false},
+    {key:'name', label:'Hero', sortable:true},
+    {key:'cat', label:'Rarity', sortable:true},
+    {key:'star', label:'Star', sortable:true},
+    {key:'atk', label:'ATK', num:true, sortable:true},
+    {key:'cls', label:'Class', sortable:true},
+    {key:'trigger', label:'Trigger', num:true, sortable:true},
+    {key:'damage', label:'Damage', num:true, sortable:true},
+    {key:'value', label:'Value', num:true, sortable:true},
+    {key:'amount', label:'Amount', num:true, sortable:true},
+    {key:'del', label:'', sortable:false}
+  ];
+
+  function pillClass(cat){
+    var k = cat.toLowerCase().replace('+','plus');
+    if (k==='urplus') return 'urplus';
+    if (['ur','ssr','sr','r'].indexOf(k)>=0) return k;
+    return 'r';
+  }
+
+  function fmtNum(n, dp){
+    if (n===undefined || n===null || isNaN(n)) return '–';
+    if (Math.abs(n) >= 1000) return Math.round(n).toLocaleString('en-US');
+    return n.toFixed(dp===undefined?2:dp);
+  }
+
+  // ---------------- header ----------------
+  function buildHead(){
+    var tr = document.getElementById('headRow');
+    tr.innerHTML = '';
+    COLS.forEach(function(c){
+      var th = document.createElement('th');
+      if (c.num) th.className='num';
+      th.textContent = c.label;
+      if (c.sortable){
+        th.addEventListener('click', function(){
+          var s = STATE.sort[STATE.tab];
+          if (s.key === c.key) s.dir = -s.dir; else { s.key = c.key; s.dir = (c.key==='name'||c.key==='cat'||c.key==='star'||c.key==='cls') ? 1 : -1; }
+          render();
+        });
+        var s = STATE.sort[STATE.tab];
+        if (s.key === c.key){
+          var arrow = document.createElement('span');
+          arrow.className='arrow';
+          arrow.textContent = s.dir===1 ? '▲' : '▼';
+          th.appendChild(arrow);
+        }
+      }
+      tr.appendChild(th);
+    });
+  }
+
+  function currentList(){ return STATE.data[STATE.tab]; }
+
+  function filteredSorted(){
+    var f = STATE.filter[STATE.tab];
+    var list = currentList().filter(function(h){
+      if (f.cls && h.cls !== f.cls) return false;
+      if (f.cat && h.cat !== f.cat) return false;
+      if (f.q && h.name.toLowerCase().indexOf(f.q.toLowerCase()) < 0) return false;
+      return true;
+    });
+    var withCalc = list.map(function(h){ return Object.assign({}, h, calc(h)); });
+    var s = STATE.sort[STATE.tab];
+    withCalc.sort(function(a,b){
+      var av = a[s.key], bv = b[s.key];
+      if (s.key==='cat'){ av = -starOrderOfCatRank(a.cat); bv = -starOrderOfCatRank(b.cat); }
+      if (s.key==='star'){ av = starOrderOf(a.star); bv = starOrderOf(b.star); }
+      if (typeof av === 'string'){ av = av.toLowerCase(); bv = (bv||'').toLowerCase(); }
+      if (av < bv) return -1*s.dir;
+      if (av > bv) return 1*s.dir;
+      return 0;
+    });
+    return withCalc;
+  }
+  function starOrderOfCatRank(cat){
+    // rank rarities in the order they appear in the lookup table (top = best)
+    for (var i=0;i<LOOKUP.rarity.length;i++) if (LOOKUP.rarity[i][0]===cat) return LOOKUP.rarity.length - i;
+    return 0;
+  }
+
+  function updateHero(id, patch){
+    var list = currentList();
+    var h = list.filter(function(x){return x.id===id;})[0];
+    if (!h) return;
+    Object.assign(h, patch);
+    saveData(STATE.tab, list);
+    render();
+  }
+  function deleteHero(id){
+    STATE.data[STATE.tab] = currentList().filter(function(x){return x.id!==id;});
+    saveData(STATE.tab, STATE.data[STATE.tab]);
+    render();
+  }
+  function seedFor(tab){ return tab==='personal' ? SEED_PERSONAL : SEED_BASE; }
+
+  function availableToAdd(){
+    var have = {};
+    currentList().forEach(function(h){ have[h.name] = true; });
+    return seedFor(STATE.tab).filter(function(s){ return !have[s.name]; })
+      .slice().sort(function(a,b){ return a.name.localeCompare(b.name); });
+  }
+
+  function addHeroFromCatalog(name){
+    var seed = seedFor(STATE.tab).filter(function(s){ return s.name === name; })[0];
+    if (!seed) return;
+    var h = Object.assign({id:'h_'+Math.random().toString(36).slice(2,9)}, seed);
+    currentList().unshift(h);
+    saveData(STATE.tab, currentList());
+    render();
+  }
+
+  function renderAddHeroOptions(){
+    var sel = document.getElementById('addHeroSelect');
+    sel.innerHTML = '<option value="" selected disabled>+ Add hero…</option>';
+    var avail = availableToAdd();
+    avail.forEach(function(s){
+      var op = document.createElement('option'); op.value = s.name; op.textContent = s.name;
+      sel.appendChild(op);
+    });
+    sel.disabled = !avail.length;
+    sel.title = avail.length ? '' : 'Every catalog hero is already in this list';
+  }
+
+  function selectEl(options, value, onchange){
+    var sel = document.createElement('select');
+    options.forEach(function(o){
+      var op = document.createElement('option');
+      op.value = o; op.textContent = o;
+      if (o === value) op.selected = true;
+      sel.appendChild(op);
+    });
+    sel.addEventListener('change', function(){ onchange(sel.value); });
+    return sel;
+  }
+
+  function renderClassFilterOptions(){
+    var sel = document.getElementById('classFilter');
+    var cur = sel.value;
+    sel.innerHTML = '<option value="">All classes</option>';
+    CLASS_OPTIONS.forEach(function(c){
+      var op = document.createElement('option'); op.value=c; op.textContent=c;
+      if (c===cur) op.selected = true;
+      sel.appendChild(op);
+    });
+  }
+
+  function renderRarityFilterOptions(){
+    var sel = document.getElementById('rarityFilter');
+    var cur = sel.value;
+    sel.innerHTML = '<option value="">All rarities</option>';
+    CAT_OPTIONS().forEach(function(c){
+      var op = document.createElement('option'); op.value=c; op.textContent=c;
+      if (c===cur) op.selected = true;
+      sel.appendChild(op);
+    });
+  }
+
+  function render(){
+    buildHead();
+    renderRarityFilterOptions();
+    renderAddHeroOptions();
+    var tbody = document.getElementById('tbody');
+    tbody.innerHTML = '';
+    var rows = filteredSorted();
+
+    if (!rows.length){
+      var tr = document.createElement('tr');
+      tr.className = 'empty-row';
+      var td = document.createElement('td');
+      td.colSpan = COLS.length;
+      td.textContent = 'No heroes match. Clear the filter or add a hero to get started.';
+      tr.appendChild(td);
+      tbody.appendChild(tr);
+    }
+
+    // rank is based on Value order regardless of current sort, for a stable "who's best" cue
+    var byValue = rows.slice().sort(function(a,b){ return b.value - a.value; });
+    var rankOf = {};
+    byValue.forEach(function(h,i){ rankOf[h.id] = i+1; });
+
+    rows.forEach(function(h){
+      var tr = document.createElement('tr');
+      var rk = rankOf[h.id];
+      if (rk===1) tr.className='rank1'; else if (rk===2) tr.className='rank2'; else if (rk===3) tr.className='rank3';
+
+      var tdRank = document.createElement('td'); tdRank.className='rankcell num'; tdRank.textContent = rk; tr.appendChild(tdRank);
+
+      var tdName = document.createElement('td'); tdName.className='namecell';
+      var inp = document.createElement('input'); inp.type='text'; inp.value = h.name;
+      inp.addEventListener('change', function(){ updateHero(h.id, {name: inp.value || 'Unnamed'}); });
+      tdName.appendChild(inp);
+      if (h.note){
+        var flag = document.createElement('span'); flag.className='note-flag'; flag.textContent='i';
+        flag.title = h.note;
+        tdName.appendChild(flag);
+      }
+      tr.appendChild(tdName);
+
+      var tdCat = document.createElement('td');
+      var catSel = selectEl(CAT_OPTIONS(), h.cat, function(v){ updateHero(h.id, {cat:v}); });
+      var pill = document.createElement('span'); pill.className='pill '+pillClass(h.cat); pill.textContent=h.cat;
+      tdCat.appendChild(pill);
+      tdCat.appendChild(document.createElement('br'));
+      tdCat.appendChild(catSel);
+      tr.appendChild(tdCat);
+
+      var tdStar = document.createElement('td');
+      tdStar.appendChild(selectEl(STAR_OPTIONS(), h.star, function(v){ updateHero(h.id, {star:v}); }));
+      tr.appendChild(tdStar);
+
+      var tdAtk = document.createElement('td'); tdAtk.className='num';
+      var atkInp = document.createElement('input'); atkInp.type='number'; atkInp.step='any'; atkInp.value = h.atk;
+      atkInp.addEventListener('change', function(){ updateHero(h.id, {atk: parseFloat(atkInp.value)||0}); });
+      tdAtk.appendChild(atkInp);
+      tr.appendChild(tdAtk);
+
+      var tdCls = document.createElement('td');
+      var clsOpts = [''].concat(CLASS_OPTIONS);
+      tdCls.appendChild(selectEl(clsOpts, h.cls || '', function(v){ updateHero(h.id, {cls:v}); }));
+      tr.appendChild(tdCls);
+
+      var tdTrig = document.createElement('td'); tdTrig.className='num'; tdTrig.textContent = (h.trigger*100).toFixed(0)+'%'; tr.appendChild(tdTrig);
+      var tdDmg = document.createElement('td'); tdDmg.className='num'; tdDmg.textContent = h.damage.toFixed(2)+'×'; tr.appendChild(tdDmg);
+      var tdVal = document.createElement('td'); tdVal.className='num valcell'; tdVal.textContent = fmtNum(h.value); tr.appendChild(tdVal);
+      var tdAmt = document.createElement('td'); tdAmt.className='num'; tdAmt.textContent = fmtNum(h.amount); tr.appendChild(tdAmt);
+
+      var tdDel = document.createElement('td');
+      var delBtn = document.createElement('button'); delBtn.className='rowdel'; delBtn.textContent='✕'; delBtn.title='Remove from list — you can add them back later';
+      delBtn.addEventListener('click', function(){ deleteHero(h.id); });
+      tdDel.appendChild(delBtn);
+      tr.appendChild(tdDel);
+
+      tbody.appendChild(tr);
+    });
+
+    var avail = availableToAdd().length;
+    document.getElementById('countNote').textContent = rows.length + ' of ' + currentList().length + ' heroes shown · sorted by ' +
+      COLS.filter(function(c){return c.key===STATE.sort[STATE.tab].key;}).map(function(c){return c.label;})[0] +
+      ' (' + (STATE.sort[STATE.tab].dir===1?'ascending':'descending') + ')' +
+      (avail ? ' · ' + avail + ' more available to add' : '');
+  }
+
+  // ---------------- tabs ----------------
+  document.getElementById('tabbar').addEventListener('click', function(e){
+    var btn = e.target.closest('button[data-tab]');
+    if (!btn) return;
+    STATE.tab = btn.getAttribute('data-tab');
+    document.querySelectorAll('#tabbar button').forEach(function(b){ b.classList.toggle('on', b===btn); });
+    document.getElementById('searchBox').value = STATE.filter[STATE.tab].q;
+    document.getElementById('classFilter').value = STATE.filter[STATE.tab].cls;
+    document.getElementById('rarityFilter').value = STATE.filter[STATE.tab].cat;
+    render();
+  });
+
+  document.getElementById('searchBox').addEventListener('input', function(){
+    STATE.filter[STATE.tab].q = this.value;
+    render();
+  });
+  document.getElementById('classFilter').addEventListener('change', function(){
+    STATE.filter[STATE.tab].cls = this.value;
+    render();
+  });
+  document.getElementById('rarityFilter').addEventListener('change', function(){
+    STATE.filter[STATE.tab].cat = this.value;
+    render();
+  });
+  document.getElementById('addHeroSelect').addEventListener('change', function(){
+    if (this.value) addHeroFromCatalog(this.value);
+  });
+  document.getElementById('resetTabBtn').addEventListener('click', function(){
+    if (!confirm('Reset the ' + (STATE.tab==='personal'?'Personal':'Base Values') + ' list back to its original data? Your edits to it will be lost.')) return;
+    STATE.data[STATE.tab] = withIds(STATE.tab==='personal' ? SEED_PERSONAL : SEED_BASE);
+    saveData(STATE.tab, STATE.data[STATE.tab]);
+    render();
+  });
+
+  // ---------------- formulas drawer ----------------
+  var drawer = document.getElementById('drawer');
+  document.getElementById('toggleFormulas').addEventListener('click', function(){
+    drawer.classList.toggle('hidden');
+    if (!drawer.classList.contains('hidden')) buildDrawer();
+  });
+
+  function buildDrawer(){
+    var rBox = document.getElementById('rarityRows');
+    rBox.innerHTML = '';
+    LOOKUP.rarity.forEach(function(row, i){
+      var d = document.createElement('div'); d.className='lrow';
+      var name = document.createElement('input'); name.type='text'; name.value=row[0];
+      name.addEventListener('change', function(){ row[0]=name.value; saveLookup(); render(); });
+      var trig = document.createElement('input'); trig.type='number'; trig.step='0.01'; trig.value=row[1];
+      trig.addEventListener('change', function(){ row[1]=parseFloat(trig.value)||0; saveLookup(); render(); });
+      var base = document.createElement('input'); base.type='number'; base.step='0.1'; base.value=row[2];
+      base.addEventListener('change', function(){ row[2]=parseFloat(base.value)||0; saveLookup(); render(); });
+      var del = document.createElement('button'); del.className='rowdel'; del.textContent='✕';
+      del.addEventListener('click', function(){ LOOKUP.rarity.splice(i,1); saveLookup(); buildDrawer(); render(); });
+      d.appendChild(name); d.appendChild(trig); d.appendChild(base); d.appendChild(del);
+      rBox.appendChild(d);
+    });
+
+    var sBox = document.getElementById('starRows');
+    sBox.innerHTML = '';
+    LOOKUP.star.forEach(function(row, i){
+      var d = document.createElement('div'); d.className='lrow star';
+      var name = document.createElement('input'); name.type='text'; name.value=row[0];
+      name.addEventListener('change', function(){ row[0]=name.value; saveLookup(); render(); });
+      var ord = document.createElement('input'); ord.type='number'; ord.step='1'; ord.value=row[1];
+      ord.addEventListener('change', function(){ row[1]=parseFloat(ord.value)||0; saveLookup(); render(); });
+      var del = document.createElement('button'); del.className='rowdel'; del.textContent='✕';
+      del.addEventListener('click', function(){ LOOKUP.star.splice(i,1); saveLookup(); buildDrawer(); render(); });
+      d.appendChild(name); d.appendChild(ord); d.appendChild(del);
+      sBox.appendChild(d);
+    });
+  }
+  document.getElementById('addRarity').addEventListener('click', function(){
+    LOOKUP.rarity.push(['New', 0.2, 1.0]); saveLookup(); buildDrawer(); render();
+  });
+  document.getElementById('addStar').addEventListener('click', function(){
+    LOOKUP.star.push(['New Star', LOOKUP.star.length+1]); saveLookup(); buildDrawer(); render();
+  });
+  document.getElementById('resetFormulas').addEventListener('click', function(){
+    if (!confirm('Reset rarity and star formulas back to defaults?')) return;
+    LOOKUP = {star: DEFAULT_STAR_ORDER.map(function(x){return x.slice();}),
+              rarity: DEFAULT_RARITY.map(function(x){return x.slice();})};
+    saveLookup(); buildDrawer(); render();
+  });
+
+  // ---------------- init ----------------
+  renderClassFilterOptions();
+  renderRarityFilterOptions();
+  render();
+})();
+</script>
+</body>
+</html>
